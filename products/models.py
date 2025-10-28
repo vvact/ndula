@@ -1,22 +1,41 @@
 from django.db import models
+from cloudinary.models import CloudinaryField
+from django.db.models import JSONField
+from django.utils.text import slugify
 
-class Sneaker(models.Model):
+
+class Product(models.Model):
     name = models.CharField(max_length=255)
-    brand = models.CharField(max_length=100, blank=True, null=True)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.TextField(blank=True, null=True)
-    main_image = models.URLField()
-    sizes = models.JSONField(default=list)  # e.g. ["39", "40", "41"]
-    available = models.BooleanField(default=True)
+    main_image = CloudinaryField('main_image')
+    sizes = JSONField(default=list, blank=True)  # [{"size": "40", "in_stock": True}, ...]
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # generate slug from name
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            # ensure uniqueness
+            while Product.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
 
 
-class SneakerImage(models.Model):
-    sneaker = models.ForeignKey(Sneaker, on_delete=models.CASCADE, related_name='images')
-    image_url = models.URLField()
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = CloudinaryField('image')
 
     def __str__(self):
-        return f"Image for {self.sneaker.name}"
+        return f"Image for {self.product.name}"
+

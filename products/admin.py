@@ -1,15 +1,14 @@
 from django.contrib import admin
-from .models import Sneaker, SneakerImage
+from .models import Product, ProductImage
 
-class SneakerImageInline(admin.TabularInline):
-    model = SneakerImage
-    extra = 1  # show at least one blank image slot
 
-class SneakerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'brand', 'price', 'available')
-    inlines = [SneakerImageInline]
-    search_fields = ('name', 'brand')
-    list_filter = ('brand', 'available')
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
 
-admin.site.register(Sneaker, SneakerAdmin)
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'created_at')
+    inlines = [ProductImageInline]
 
